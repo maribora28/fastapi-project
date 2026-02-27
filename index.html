@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ежедневник • Планнер задач</title>
+    
+    <!-- Подключаем шрифт Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        #app {
+            width: 100%;
+            max-width: 1000px;
+        }
+        
+        /* Основной контейнер */
+        .planner-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+        }
+        
+        /* Заголовок */
+        .planner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .planner-title h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1f2937;
+            letter-spacing: -0.5px;
+        }
+        
+        .planner-title .date {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        
+        .progress-summary {
+            background: #f9fafb;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .progress-summary span {
+            font-weight: 600;
+            color: #2563eb;
+        }
+        
+        /* Сетка */
+        .planner-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+        }
+        
+        /* Левая колонка - задачи */
+        .tasks-section {
+            background: #f9fafb;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .section-header .count {
+            background: #e5e7eb;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #4b5563;
+        }
+        
+        /* Фильтры */
+        .filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .filter-btn.active {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: white;
+        }
+        
+        /* Форма добавления */
+        .add-task-form {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .form-row {
+            margin-bottom: 12px;
+        }
+        
+        .form-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .task-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .task-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .select-input {
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #374151;
+            background: white;
+        }
+        
+        .select-input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        
+        .add-btn {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .add-btn:hover {
+            background: #1d4ed8;
+        }
+        
+        .add-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        /* Список задач */
+        .tasks-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .task-item {
+            background: white;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 8px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+        }
+        
+        .task-item:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .task-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .task-checkbox.checked {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        
+        .task-title {
+            font-weight: 500;
+            color: #1f2937;
+            flex: 1;
+        }
+        
+        .task-title.completed {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+        
+        .category-badge {
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .category-work {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .category-personal {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .category-study {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        
+        .task-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+            color: #6b7280;
+            margin-left: 32px;
+        }
+        
+        .task-meta i {
+            width: 14px;
+            margin-right: 4px;
+            color: #9ca3af;
+        }
+        
+        .task-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+        
+        .task-btn {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .task-btn:hover {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+        
+        .task-btn.delete:hover {
+            color: #dc2626;
+        }
+        
+        /* Правая колонка */
+        .info-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .info-card {
+            background: #f9fafb;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .info-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        /* Категории */
+        .category-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .category-stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .category-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+        }
+        
+        .category-color.work { background: #2563eb; }
+        .category-color.personal { background: #16a34a; }
+        .category-color.study { background: #eab308; }
+        
+        .category-stat-item span {
+            flex: 1;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        
+        .category-stat-item .count {
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        /* Заметки */
+        .notes-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 100px;
+            margin-bottom: 12px;
+        }
+        
+        .notes-textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        
+        .save-notes-btn {
+            padding: 8px 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .save-notes-btn:hover {
+            background: #1d4ed8;
+        }
+        
+        /* Небольшая заметка */
+        .tip-text {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 8px;
+        }
+        
+        /* Пустое состояние */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+            font-size: 14px;
+        }
+        
+        /* Скролл */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="planner-container">
+            <!-- Шапка -->
+            <div class="planner-header">
+                <div class="planner-title">
+                    <h1>Ежедневник</h1>
+                    <div class="date">
+                        <i class="far fa-calendar-alt" style="margin-right: 6px;"></i>
+                        {{ currentDate }}
+                    </div>
+                </div>
+                <div class="progress-summary">
+                    <i class="far fa-check-circle" style="margin-right: 8px;"></i>
+                    Прогресс: <span>{{ completedTasks }}</span> из <span>{{ totalTasks }}</span> задач
+                    ({{ Math.round((completedTasks / (totalTasks || 1)) * 100) }}%)
+                </div>
+            </div>
+            
+            <!-- Основная сетка -->
+            <div class="planner-grid">
+                <!-- Левая колонка: задачи -->
+                <div class="tasks-section">
+                    <div class="section-header">
+                        <h2><i class="far fa-list-alt" style="margin-right: 8px;"></i> Задачи на сегодня</h2>
+                        <span class="count">{{ activeTasks }} активных</span>
+                    </div>
+                    
+                    <!-- Фильтры -->
+                    <div class="filters">
+                        <button v-for="filter in filters" 
+                                :key="filter.value"
+                                @click="currentFilter = filter.value"
+                                class="filter-btn"
+                                :class="{ active: currentFilter === filter.value }">
+                            {{ filter.label }}
+                        </button>
+                    </div>
+                    
+                    <!-- Форма добавления задачи -->
+                    <div class="add-task-form">
+                        <div class="form-row">
+                            <input type="text" 
+                                   v-model="newTask.title"
+                                   @keyup.enter="addTask"
+                                   placeholder="Название задачи"
+                                   class="task-input">
+                        </div>
+                        <div class="form-grid">
+                            <select v-model="newTask.category" class="select-input">
+                                <option value="work">Работа</option>
+                                <option value="personal">Личное</option>
+                                <option value="study">Учеба</option>
+                            </select>
+                            <input type="time" 
+                                   v-model="newTask.time" 
+                                   class="select-input">
+                        </div>
+                        <div class="form-row" style="margin-top: 12px;">
+                            <input type="text" 
+                                   v-model="newTask.description"
+                                   @keyup.enter="addTask"
+                                   placeholder="Краткое описание (необязательно)"
+                                   class="task-input">
+                        </div>
+                        <div class="form-row">
+                            <button @click="addTask" 
+                                    :disabled="!newTask.title.trim()"
+                                    class="add-btn">
+                                <i class="fas fa-plus" style="margin-right: 8px;"></i>
+                                Добавить задачу
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Список задач -->
+                    <div class="tasks-list">
+                        <div v-if="filteredTasks.length === 0" class="empty-state">
+                            <i class="far fa-clipboard" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
+                            <p>Нет задач</p>
+                        </div>
+                        
+                        <div v-for="task in filteredTasks" 
+                             :key="task.id"
+                             class="task-item">
+                            
+                            <div class="task-header">
+                                <div @click="toggleTask(task)"
+                                     class="task-checkbox"
+                                     :class="{ checked: task.completed }">
+                                    <i class="fas fa-check" v-if="task.completed"></i>
+                                </div>
+                                
+                                <span class="task-title" :class="{ completed: task.completed }">
+                                    {{ task.title }}
+                                </span>
+                                
+                                <span class="category-badge" 
+                                      :class="{
+                                          'category-work': task.category === 'work',
+                                          'category-personal': task.category === 'personal',
+                                          'category-study': task.category === 'study'
+                                      }">
+                                    {{ task.category === 'work' ? 'Работа' : 
+                                       task.category === 'personal' ? 'Личное' : 'Учеба' }}
+                                </span>
+                            </div>
+                            
+                            <div class="task-meta">
+                                <span v-if="task.time">
+                                    <i class="far fa-clock"></i> {{ task.time }}
+                                </span>
+                                <span v-if="task.description">
+                                    <i class="far fa-file-alt"></i> {{ task.description }}
+                                </span>
+                                <div class="task-actions">
+                                    <button @click="editTask(task)" class="task-btn">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                    <button @click="deleteTask(task.id)" class="task-btn delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Правая колонка: информация -->
+                <div class="info-section">
+                    <!-- Статистика по категориям -->
+                    <div class="info-card">
+                        <h3><i class="fas fa-chart-pie" style="margin-right: 8px;"></i> Категории</h3>
+                        <div class="category-stats">
+                            <div class="category-stat-item">
+                                <div class="category-color work"></div>
+                                <span>Работа</span>
+                                <span class="count">{{ categoryStats.work }}</span>
+                            </div>
+                            <div class="category-stat-item">
+                                <div class="category-color personal"></div>
+                                <span>Личное</span>
+                                <span class="count">{{ categoryStats.personal }}</span>
+                            </div>
+                            <div class="category-stat-item">
+                                <div class="category-color study"></div>
+                                <span>Учеба</span>
+                                <span class="count">{{ categoryStats.study }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Блокнот для заметок -->
+                    <div class="info-card">
+                        <h3><i class="far fa-sticky-note" style="margin-right: 8px;"></i> Заметки на день</h3>
+                        <textarea v-model="dailyNotes" 
+                                  placeholder="Напишите важные заметки на сегодня..."
+                                  class="notes-textarea"></textarea>
+                        <button @click="saveNotes" class="save-notes-btn">
+                            <i class="fas fa-save" style="margin-right: 8px;"></i>
+                            Сохранить заметку
+                        </button>
+                        <div v-if="notesSaved" class="tip-text" style="color: #16a34a; margin-top: 8px;">
+                            <i class="fas fa-check"></i> Заметка сохранена
+                        </div>
+                    </div>
+                    
+                    <!-- Быстрые советы -->
+                    <div class="info-card">
+                        <h3><i class="far fa-lightbulb" style="margin-right: 8px;"></i> На сегодня</h3>
+                        <div style="font-size: 14px; color: #4b5563;">
+                            <p style="margin-bottom: 8px;">• Всего задач: {{ totalTasks }}</p>
+                            <p style="margin-bottom: 8px;">• Осталось: {{ activeTasks }}</p>
+                            <p>• Выполнено: {{ completedTasks }}</p>
+                        </div>
+                        <div class="tip-text" style="margin-top: 16px;">
+                            <i class="far fa-clock"></i> 
+                            {{ activeTasks === 0 ? 'Отличная работа! Все задачи выполнены' : 'Сосредоточьтесь на приоритетных задачах' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, watch } = Vue;
+
+        const app = createApp({
+            setup() {
+                // Состояние задач
+                const tasks = ref([]);
+                const newTask = ref({
+                    title: '',
+                    description: '',
+                    category: 'work',
+                    time: ''
+                });
+                
+                // Фильтры
+                const currentFilter = ref('all');
+                const filters = [
+                    { label: 'Все', value: 'all' },
+                    { label: 'Активные', value: 'active' },
+                    { label: 'Выполненные', value: 'completed' }
+                ];
+                
+                // Заметки
+                const dailyNotes = ref('');
+                const notesSaved = ref(false);
+                
+                // Текущая дата
+                const currentDate = computed(() => {
+                    const date = new Date();
+                    return date.toLocaleDateString('ru-RU', { 
+                        weekday: 'long', 
+                        day: 'numeric', 
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                });
+                
+                // Загрузка данных
+                const loadData = () => {
+                    const savedTasks = localStorage.getItem('planner-tasks');
+                    if (savedTasks) {
+                        tasks.value = JSON.parse(savedTasks);
+                    } else {
+                        // Демо-задачи
+                        tasks.value = [
+                            {
+                                id: 1,
+                                title: 'Созвониться с командой',
+                                description: 'Обсудить планы на неделю',
+                                category: 'work',
+                                time: '10:00',
+                                completed: false
+                            },
+                            {
+                                id: 2,
+                                title: 'Купить продукты',
+                                description: 'Молоко, хлеб, овощи',
+                                category: 'personal',
+                                time: '18:30',
+                                completed: true
+                            },
+                            {
+                                id: 3,
+                                title: 'Изучить Vue 3',
+                                description: 'Прочитать документацию',
+                                category: 'study',
+                                time: '15:00',
+                                completed: false
+                            }
+                        ];
+                    }
+                    
+                    const savedNotes = localStorage.getItem('planner-notes');
+                    if (savedNotes) {
+                        dailyNotes.value = savedNotes;
+                    }
+                };
+                
+                loadData();
+                
+                // Сохранение задач
+                watch(tasks, (newTasks) => {
+                    localStorage.setItem('planner-tasks', JSON.stringify(newTasks));
+                }, { deep: true });
+                
+                // Статистика
+                const totalTasks = computed(() => tasks.value.length);
+                const activeTasks = computed(() => tasks.value.filter(t => !t.completed).length);
+                const completedTasks = computed(() => tasks.value.filter(t => t.completed).length);
+                
+                // Статистика по категориям
+                const categoryStats = computed(() => {
+                    const stats = { work: 0, personal: 0, study: 0 };
+                    tasks.value.forEach(task => {
+                        if (stats.hasOwnProperty(task.category)) {
+                            stats[task.category]++;
+                        }
+                    });
+                    return stats;
+                });
+                
+                // Фильтрация задач
+                const filteredTasks = computed(() => {
+                    switch(currentFilter.value) {
+                        case 'active':
+                            return tasks.value.filter(t => !t.completed);
+                        case 'completed':
+                            return tasks.value.filter(t => t.completed);
+                        default:
+                            return tasks.value;
+                    }
+                });
+                
+                // Методы
+                const addTask = () => {
+                    if (!newTask.value.title.trim()) return;
+                    
+                    tasks.value.push({
+                        id: Date.now(),
+                        title: newTask.value.title,
+                        description: newTask.value.description,
+                        category: newTask.value.category,
+                        time: newTask.value.time,
+                        completed: false
+                    });
+                    
+                    // Сброс формы
+                    newTask.value = {
+                        title: '',
+                        description: '',
+                        category: 'work',
+                        time: ''
+                    };
+                };
+                
+                const toggleTask = (task) => {
+                    task.completed = !task.completed;
+                };
+                
+                const deleteTask = (id) => {
+                    tasks.value = tasks.value.filter(t => t.id !== id);
+                };
+                
+                const editTask = (task) => {
+                    const newTitle = prompt('Редактировать задачу:', task.title);
+                    if (newTitle && newTitle.trim()) {
+                        task.title = newTitle;
+                    }
+                };
+                
+                const saveNotes = () => {
+                    localStorage.setItem('planner-notes', dailyNotes.value);
+                    notesSaved.value = true;
+                    setTimeout(() => {
+                        notesSaved.value = false;
+                    }, 2000);
+                };
+                
+                return {
+                    tasks,
+                    newTask,
+                    currentFilter,
+                    filters,
+                    dailyNotes,
+                    notesSaved,
+                    currentDate,
+                    totalTasks,
+                    activeTasks,
+                    completedTasks,
+                    categoryStats,
+                    filteredTasks,
+                    addTask,
+                    toggleTask,
+                    deleteTask,
+                    editTask,
+                    saveNotes
+                };
+            }
+        });
+        
+        app.mount('#app');
+    </script>
+</body>
+</html>
